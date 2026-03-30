@@ -11,6 +11,8 @@ from reachclaw import __version__
 from reachclaw.agent import Agent
 from reachclaw.claw import Claw
 from reachclaw.config import CLAWS_DIR, MAN_INSTALL_URL
+from reachclaw.moltbook import build_all, export_moltbook, import_moltbook, validate_entry
+from reachclaw.molthub import MoltHub
 from reachclaw.node_verifier import simulate_verify, verify_agent_node
 from reachclaw.registry import Registry
 from reachclaw.soul_token import (
@@ -28,6 +30,13 @@ def _registry(args: argparse.Namespace) -> Registry:
     reg = Registry(data_dir=data_dir)
     reg.load()
     return reg
+
+
+def _molthub(args: argparse.Namespace) -> MoltHub:
+    data_dir = Path(args.data_dir) if args.data_dir else None
+    hub = MoltHub(data_dir=data_dir)
+    hub.load()
+    return hub
 
 
 # ======================================================================
@@ -220,6 +229,130 @@ def cmd_contribute(args: argparse.Namespace) -> None:
 
 
 # ======================================================================
+# MoltBook sub-commands
+# ======================================================================
+
+
+def cmd_moltbook_build(args: argparse.Namespace) -> None:
+    """Build MoltBook manifest entries for all Claws."""
+    claws_dir = Path(args.claws_dir) if args.claws_dir else CLAWS_DIR
+    entries = build_all(claws_dir)
+    print(f"📖 Built MoltBook with {len(entries)} entries:\n")
+    for entry in entries:
+        print(f"  • {entry['slug']:<20} — v{entry['schema_version']}")
+    print()
+    if args.output:
+        dest = Path(args.output)
+        export_moltbook(entries, dest)
+        print(f"💾 Exported to {dest}")
+
+
+def cmd_moltbook_validate(args: argparse.Namespace) -> None:
+    """Validate a MoltBook JSON file."""
+    src = Path(args.file)
+    try:
+        entries = import_moltbook(src)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"❌ Validation failed: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"✅ MoltBook valid — {len(entries)} entries")
+
+
+def cmd_moltbook_list(args: argparse.Namespace) -> None:
+    """List entries in a MoltBook JSON file."""
+    src = Path(args.file)
+    try:
+        entries = import_moltbook(src)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        sys.exit(1)
+    for entry in entries:
+        hook = entry.get("summary", {}).get("memetic_hook", "")
+        print(f"  {entry['slug']:<20} — {hook}")
+
+
+# ======================================================================
+# MoltHub sub-commands
+# ======================================================================
+
+
+def cmd_molthub_deploy(args: argparse.Namespace) -> None:
+    """Deploy Claws to MoltHub from a MoltBook file or directly from claws/."""
+    hub = _molthub(args)
+    claws_dir = Path(args.claws_dir) if args.claws_dir else CLAWS_DIR
+
+    if args.file:
+        entries = import_moltbook(Path(args.file))
+    else:
+        entries = build_all(claws_dir)
+
+    deployed = 0
+    for entry in entries:
+        slug = entry["slug"]
+        if hub.get(slug) is not None:
+            print(f"  ⏭ {slug} already deployed — skipping")
+            continue
+        hub.deploy(entry)
+        hub.activate(slug)
+        deployed += 1
+        print(f"  🚀 Deployed and activated: {slug}")
+
+    hub.save()
+    print(f"\n✅ {deployed} Claw(s) deployed to MoltHub ({hub.size} total)")
+
+
+def cmd_molthub_status(args: argparse.Namespace) -> None:
+    """Show MoltHub deployment status."""
+    hub = _molthub(args)
+    records = hub.list_deployments()
+    if not records:
+        print("MoltHub is empty — no Claws deployed yet.")
+        return
+    active = hub.list_active()
+    print(f"📡 MoltHub Status — {len(records)} deployed, {len(active)} active\n")
+    for record in records:
+        slug = record["entry"]["slug"]
+        status = record["status"]
+        icon = {"deployed": "📦", "active": "🟢", "inactive": "🔴"}.get(status, "❓")
+        print(f"  {icon} {slug:<20} [{status}]")
+
+
+def cmd_molthub_activate(args: argparse.Namespace) -> None:
+    """Activate a deployed Claw."""
+    hub = _molthub(args)
+    try:
+        hub.activate(args.slug)
+    except KeyError as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        sys.exit(1)
+    hub.save()
+    print(f"🟢 Activated: {args.slug}")
+
+
+def cmd_molthub_deactivate(args: argparse.Namespace) -> None:
+    """Deactivate a deployed Claw."""
+    hub = _molthub(args)
+    try:
+        hub.deactivate(args.slug)
+    except KeyError as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        sys.exit(1)
+    hub.save()
+    print(f"🔴 Deactivated: {args.slug}")
+
+
+def cmd_molthub_undeploy(args: argparse.Namespace) -> None:
+    """Remove a Claw from MoltHub."""
+    hub = _molthub(args)
+    if hub.undeploy(args.slug):
+        hub.save()
+        print(f"🗑 Undeployed: {args.slug}")
+    else:
+        print(f"❌ Claw '{args.slug}' not found in MoltHub.", file=sys.stderr)
+        sys.exit(1)
+
+
+# ======================================================================
 # Argument parser
 # ======================================================================
 
@@ -290,6 +423,29 @@ def build_parser() -> argparse.ArgumentParser:
     contrib_p = sub.add_parser("contribute", help="Record a contribution")
     contrib_p.add_argument("agent_id")
 
+    # moltbook
+    mb_p = sub.add_parser("moltbook", help="MoltBook manifest operations")
+    mb_sub = mb_p.add_subparsers(dest="moltbook_command")
+    mb_build = mb_sub.add_parser("build", help="Build MoltBook from claws/")
+    mb_build.add_argument("-o", "--output", default="", help="Export JSON path")
+    mb_val = mb_sub.add_parser("validate", help="Validate a MoltBook JSON file")
+    mb_val.add_argument("file", help="Path to MoltBook JSON file")
+    mb_list = mb_sub.add_parser("list", help="List entries in a MoltBook file")
+    mb_list.add_argument("file", help="Path to MoltBook JSON file")
+
+    # molthub
+    mh_p = sub.add_parser("molthub", help="MoltHub deployment operations")
+    mh_sub = mh_p.add_subparsers(dest="molthub_command")
+    mh_deploy = mh_sub.add_parser("deploy", help="Deploy Claws to MoltHub")
+    mh_deploy.add_argument("-f", "--file", default="", help="MoltBook JSON file")
+    mh_sub.add_parser("status", help="Show MoltHub deployment status")
+    mh_act = mh_sub.add_parser("activate", help="Activate a deployed Claw")
+    mh_act.add_argument("slug", help="Claw slug to activate")
+    mh_deact = mh_sub.add_parser("deactivate", help="Deactivate a deployed Claw")
+    mh_deact.add_argument("slug", help="Claw slug to deactivate")
+    mh_undeploy = mh_sub.add_parser("undeploy", help="Remove a Claw from MoltHub")
+    mh_undeploy.add_argument("slug", help="Claw slug to undeploy")
+
     return parser
 
 
@@ -322,6 +478,20 @@ _CLAW_DISPATCH = {
     "engage": cmd_claw_engage,
 }
 
+_MOLTBOOK_DISPATCH = {
+    "build": cmd_moltbook_build,
+    "validate": cmd_moltbook_validate,
+    "list": cmd_moltbook_list,
+}
+
+_MOLTHUB_DISPATCH = {
+    "deploy": cmd_molthub_deploy,
+    "status": cmd_molthub_status,
+    "activate": cmd_molthub_activate,
+    "deactivate": cmd_molthub_deactivate,
+    "undeploy": cmd_molthub_undeploy,
+}
+
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
@@ -347,5 +517,17 @@ def main(argv: list[str] | None = None) -> None:
             handler(args)
         else:
             parser.parse_args(["claw", "--help"])
+    elif args.command == "moltbook":
+        handler = _MOLTBOOK_DISPATCH.get(args.moltbook_command)
+        if handler:
+            handler(args)
+        else:
+            parser.parse_args(["moltbook", "--help"])
+    elif args.command == "molthub":
+        handler = _MOLTHUB_DISPATCH.get(args.molthub_command)
+        if handler:
+            handler(args)
+        else:
+            parser.parse_args(["molthub", "--help"])
     else:
         parser.print_help()
