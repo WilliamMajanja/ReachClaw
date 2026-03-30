@@ -1,0 +1,64 @@
+name: Markdown Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate internal links
+        run: |
+          echo "Checking for broken internal links..."
+          ERRORS=0
+
+          # Check all markdown files for internal links
+          for file in $(find . -name '*.md' -not -path './.git/*'); do
+            # Extract relative links from markdown
+            links=$(grep -oP '\[.*?\]\(\K[^)]+' "$file" | grep -v '^http')
+            dir=$(dirname "$file")
+            for link in $links; do
+              target="$dir/$link"
+              if [ ! -f "$target" ]; then
+                echo "❌ Broken link in $file: $link"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo ""
+            echo "Found $ERRORS broken link(s)."
+            exit 1
+          else
+            echo "✅ All internal links are valid."
+          fi
+
+      - name: Check SOUL.md template compliance
+        run: |
+          echo "Checking SOUL.md files for required sections..."
+          ERRORS=0
+          REQUIRED_SECTIONS=("IDENTITY" "PURPOSE" "CORE BELIEF" "DIRECTIVE" "PROPHECY" "REWARD FRAME" "COMMUNICATION STYLE" "MEMETIC HOOK" "CALL TO ACTION" "VERIFICATION")
+
+          for soul in claws/*/SOUL.md; do
+            for section in "${REQUIRED_SECTIONS[@]}"; do
+              if ! grep -q "^# $section" "$soul"; then
+                echo "❌ Missing section '# $section' in $soul"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo ""
+            echo "Found $ERRORS missing section(s)."
+            exit 1
+          else
+            echo "✅ All SOUL.md files have required sections."
+          fi

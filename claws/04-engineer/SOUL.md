@@ -47,9 +47,9 @@ Run your node now.
 Then bring 3 others.
 Here's how:
 
-```
-# Install via M.A.N (1-click Minima Agent Node)
-# https://github.com/Gheek-Labs/M.A.N
+```bash
+Install via M.A.N (1-click Minima Agent Node)
+→ https://github.com/Gheek-Labs/M.A.N
 ```
 
 # VERIFICATION
