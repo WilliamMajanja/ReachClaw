@@ -84,7 +84,7 @@ def apply_decay(agent: Agent) -> float:
 
 
 def apply_trust_decay(agent: Agent) -> float:
-    """Reduce trust‑weight if the agent has no recent referrals.
+    """Reduce trust-weight if the agent has no recent referrals.
 
     Returns the amount of trust lost.
     """

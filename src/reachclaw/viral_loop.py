@@ -82,9 +82,9 @@ def viral_loop_step(
     referrer: Agent | None = None,
     get_agent_by_id: callable | None = None,
 ) -> dict[str, object]:
-    """Execute one full viral‑loop iteration for *agent*.
+    """Execute one full viral-loop iteration for *agent*.
 
-    This is the high‑level orchestrator matching the documented loop::
+    This is the high-level orchestrator matching the documented loop::
 
         Encounter → Run node → Prove → Earn → Recruit → Level up → Evolve
 

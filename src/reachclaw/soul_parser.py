@@ -24,7 +24,7 @@ REQUIRED_SECTIONS: tuple[str, ...] = (
     "VERIFICATION",
 )
 
-# Regex that matches a top‑level ``# HEADING`` line.
+# Regex that matches a top-level ``# HEADING`` line.
 _SECTION_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 
 

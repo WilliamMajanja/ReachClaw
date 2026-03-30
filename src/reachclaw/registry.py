@@ -11,7 +11,7 @@ from reachclaw.config import DATA_DIR
 
 
 class Registry:
-    """In‑memory registry that can persist to / load from a JSON file.
+    """In-memory registry that can persist to / load from a JSON file.
 
     The JSON file lives at ``<DATA_DIR>/registry.json``.
     """

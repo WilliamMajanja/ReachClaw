@@ -27,7 +27,7 @@ NODE_UPTIME_REWARD: float = 1.0
 # Reward given to the *referrer* when a direct referee proves node operation.
 REFERRAL_REWARD: float = 5.0
 
-# Diminishing referral‑depth multipliers (index 0 = direct referral).
+# Diminishing referral-depth multipliers (index 0 = direct referral).
 REFERRAL_DEPTH_MULTIPLIERS: list[float] = [1.0, 0.5, 0.25]
 
 # Reward for a verified intelligence contribution.
@@ -40,11 +40,11 @@ CONTRIBUTION_REWARD: float = 3.0
 # Fraction of SOUL that decays per cycle when a node is offline.
 DECAY_RATE: float = 0.05
 
-# Fraction of trust‑weight reduction per cycle without new referrals.
+# Fraction of trust-weight reduction per cycle without new referrals.
 TRUST_DECAY_RATE: float = 0.02
 
 # ---------------------------------------------------------------------------
-# Viral‑loop
+# Viral-loop
 # ---------------------------------------------------------------------------
 
 # Number of verified referrals required to level up.
@@ -56,7 +56,7 @@ MAX_REFERRAL_DEPTH: int = len(REFERRAL_DEPTH_MULTIPLIERS)
 # Minimum SOUL balance to be eligible for Claw evolution.
 CLAW_EVOLUTION_MIN_SOUL: float = 50.0
 
-# Minimum trust‑weight to be eligible for Claw evolution.
+# Minimum trust-weight to be eligible for Claw evolution.
 CLAW_EVOLUTION_MIN_TRUST: float = 0.8
 
 # ---------------------------------------------------------------------------

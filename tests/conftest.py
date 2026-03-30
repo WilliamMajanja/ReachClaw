@@ -26,7 +26,7 @@ def tmp_data_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def registry(tmp_data_dir: Path) -> Registry:
-    """Return an empty in‑memory registry backed by a temp directory."""
+    """Return an empty in-memory registry backed by a temp directory."""
     return Registry(data_dir=tmp_data_dir)
 
 

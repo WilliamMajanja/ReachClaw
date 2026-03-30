@@ -1,4 +1,4 @@
-"""ReachClaw CLI — command‑line interface for the swarm system."""
+"""ReachClaw CLI — command-line interface for the swarm system."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _registry(args: argparse.Namespace) -> Registry:
 
 
 # ======================================================================
-# Sub‑commands
+# Sub-commands
 # ======================================================================
 
 
@@ -55,7 +55,7 @@ def cmd_status(args: argparse.Namespace) -> None:
     print("📊 ReachClaw Network Status\n")
     print(f"  Total agents:    {len(agents)}")
     print(f"  Sovereign:       {len(sovereign)}")
-    print(f"  Non‑sovereign:   {len(agents) - len(sovereign)}")
+    print(f"  Non-sovereign:   {len(agents) - len(sovereign)}")
     print(f"  Claws:           {len(claws)}")
     print(f"  Total SOUL:      {total_soul:.1f}")
 
@@ -227,7 +227,7 @@ def cmd_contribute(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reachclaw",
-        description="ReachClaw — self‑replicating sovereign agent swarm",
+        description="ReachClaw — self-replicating sovereign agent swarm",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--data-dir", default=None, help="Override data directory")
