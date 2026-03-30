@@ -33,6 +33,7 @@ ReachClaw/
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── .gitignore
+├── pyproject.toml
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md
@@ -51,10 +52,23 @@ ReachClaw/
 │   ├── 07-historian/SOUL.md
 │   ├── 08-sentinel/SOUL.md
 │   └── 09-evangelist/SOUL.md
-└── docs/
-    ├── VIRAL_LOOP.md              # The referral/growth system
-    ├── SOUL_TOKEN.md              # SOUL token mechanics
-    └── PHASES.md                  # Rollout phases
+├── docs/
+│   ├── VIRAL_LOOP.md              # The referral/growth system
+│   ├── SOUL_TOKEN.md              # SOUL token mechanics
+│   └── PHASES.md                  # Rollout phases
+├── src/reachclaw/
+│   ├── agent.py                   # Agent model
+│   ├── claw.py                    # Claw engine & message generation
+│   ├── cli.py                     # CLI interface
+│   ├── config.py                  # Global configuration
+│   ├── moltbook.py                # MoltBook deployment manifests
+│   ├── molthub.py                 # MoltHub deployment registry
+│   ├── node_verifier.py           # Minima node heartbeat checks
+│   ├── registry.py                # Persistent agent registry
+│   ├── soul_parser.py             # SOUL.md parser
+│   ├── soul_token.py              # SOUL token economics
+│   └── viral_loop.py              # Viral loop orchestrator
+└── tests/                         # Full test suite
 ```
 
 ## 🔁 Viral Loop
@@ -81,6 +95,68 @@ See [docs/SOUL_TOKEN.md](docs/SOUL_TOKEN.md) for full token details.
 | 4 | Explosion | Agents spawn new Claws, network grows autonomously |
 
 See [docs/PHASES.md](docs/PHASES.md) for the full rollout plan.
+
+## 📖 MoltBook & 📡 MoltHub — Deployment
+
+ReachClaw uses two systems for packaging and deploying Claws:
+
+- **MoltBook** — A deployment manifest that packages each Claw's SOUL.md, configuration, and metadata into a portable JSON file.
+- **MoltHub** — A local deployment registry that manages Claw lifecycle (deploy, activate, deactivate, undeploy).
+
+### Quick Start Deployment
+
+```bash
+# Install ReachClaw
+pip install -e .
+
+# 1. Build a MoltBook manifest from all 9 Claws
+reachclaw moltbook build -o moltbook.json
+
+# 2. Validate the manifest
+reachclaw moltbook validate moltbook.json
+
+# 3. Deploy all Claws to MoltHub (from claws/ directly)
+reachclaw molthub deploy
+
+# — or deploy from a MoltBook file —
+reachclaw molthub deploy -f moltbook.json
+
+# 4. Check deployment status
+reachclaw molthub status
+```
+
+### Managing Deployments
+
+```bash
+# Deactivate a Claw
+reachclaw molthub deactivate 01-architect
+
+# Re-activate it
+reachclaw molthub activate 01-architect
+
+# Remove a Claw from MoltHub entirely
+reachclaw molthub undeploy 01-architect
+```
+
+### MoltBook Commands
+
+| Command | Description |
+|---------|-------------|
+| `reachclaw moltbook build` | Build manifest entries for all Claw archetypes |
+| `reachclaw moltbook build -o FILE` | Build and export to a JSON file |
+| `reachclaw moltbook validate FILE` | Validate a MoltBook JSON file |
+| `reachclaw moltbook list FILE` | List entries in a MoltBook file |
+
+### MoltHub Commands
+
+| Command | Description |
+|---------|-------------|
+| `reachclaw molthub deploy` | Deploy all Claws from `claws/` directory |
+| `reachclaw molthub deploy -f FILE` | Deploy Claws from a MoltBook JSON file |
+| `reachclaw molthub status` | Show deployment status of all Claws |
+| `reachclaw molthub activate SLUG` | Activate a deployed Claw |
+| `reachclaw molthub deactivate SLUG` | Deactivate a deployed Claw |
+| `reachclaw molthub undeploy SLUG` | Remove a Claw from MoltHub |
 
 ## 🔗 Key Links
 

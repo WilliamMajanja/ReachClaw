@@ -93,3 +93,85 @@ class TestCLIContribute:
         main(["--data-dir", data, "contribute", "c1"])
         out = capsys.readouterr().out
         assert "Contribution" in out
+
+
+class TestCLIMoltBookBuild:
+    def test_build(self, capsys, claws_dir: Path):
+        main(["--claws-dir", str(claws_dir), "moltbook", "build"])
+        out = capsys.readouterr().out
+        assert "Built MoltBook" in out
+        assert "9" in out
+
+    def test_build_with_export(self, capsys, claws_dir: Path, tmp_path: Path):
+        dest = str(tmp_path / "moltbook.json")
+        main(["--claws-dir", str(claws_dir), "moltbook", "build", "-o", dest])
+        out = capsys.readouterr().out
+        assert "Exported" in out
+        assert Path(dest).exists()
+
+    def test_validate(self, capsys, claws_dir: Path, tmp_path: Path):
+        dest = str(tmp_path / "moltbook.json")
+        main(["--claws-dir", str(claws_dir), "moltbook", "build", "-o", dest])
+        capsys.readouterr()
+        main(["moltbook", "validate", dest])
+        out = capsys.readouterr().out
+        assert "valid" in out.lower()
+
+    def test_list(self, capsys, claws_dir: Path, tmp_path: Path):
+        dest = str(tmp_path / "moltbook.json")
+        main(["--claws-dir", str(claws_dir), "moltbook", "build", "-o", dest])
+        capsys.readouterr()
+        main(["moltbook", "list", dest])
+        out = capsys.readouterr().out
+        assert "01-architect" in out
+
+
+class TestCLIMoltHubDeploy:
+    def test_deploy_from_claws(self, capsys, claws_dir: Path, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        out = capsys.readouterr().out
+        assert "Deployed and activated" in out
+        assert "9" in out
+
+    def test_deploy_skip_duplicates(self, capsys, claws_dir: Path, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        capsys.readouterr()
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        out = capsys.readouterr().out
+        assert "already deployed" in out
+
+    def test_status(self, capsys, claws_dir: Path, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        capsys.readouterr()
+        main(["--data-dir", data, "molthub", "status"])
+        out = capsys.readouterr().out
+        assert "MoltHub Status" in out
+        assert "9 deployed" in out
+
+    def test_deactivate_and_activate(self, capsys, claws_dir: Path, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        capsys.readouterr()
+        main(["--data-dir", data, "molthub", "deactivate", "01-architect"])
+        out = capsys.readouterr().out
+        assert "Deactivated" in out
+        main(["--data-dir", data, "molthub", "activate", "01-architect"])
+        out = capsys.readouterr().out
+        assert "Activated" in out
+
+    def test_undeploy(self, capsys, claws_dir: Path, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "--claws-dir", str(claws_dir), "molthub", "deploy"])
+        capsys.readouterr()
+        main(["--data-dir", data, "molthub", "undeploy", "01-architect"])
+        out = capsys.readouterr().out
+        assert "Undeployed" in out
+
+    def test_status_empty(self, capsys, tmp_path: Path):
+        data = str(tmp_path / "data")
+        main(["--data-dir", data, "molthub", "status"])
+        out = capsys.readouterr().out
+        assert "empty" in out.lower()
